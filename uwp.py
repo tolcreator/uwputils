@@ -23,12 +23,12 @@ def sanityCheck(suwp):
     :return:
     """
     # Gotta be the right length
-    if len(suwp) != 8:
-        raise ValueError
+    if len(suwp) != 9:
+        raise ValueError("Wrong Length")
 
     # Gotta have that dash
     if suwp[7] not in ['-']:
-        raise ValueError
+        raise ValueError("No Dash")
 
     starport = suwp[0]
     size = suwp[1]
@@ -40,22 +40,22 @@ def sanityCheck(suwp):
     tech = suwp[8]
 
     if starport not in ['A', 'B', 'C', 'D', 'E', 'X']:
-        raise ValueError
-    if size not in HEXES[1:10]:
-        raise ValueError
-    if atmosphere not in HEXES[1:15]:
-        raise ValueError
-    if hydrosphere not in HEXES[1:10]:
-        raise ValueError
-    if population not in HEXES[1:10]:
-        raise ValueError
+        raise ValueError("Invalid Starport")
+    if size not in HEXES[:11]:
+        raise ValueError("Invalid Size")
+    if atmosphere not in HEXES[:16]:
+        raise ValueError("Invalid Atmosphere")
+    if hydrosphere not in HEXES[:11]:
+        raise ValueError("Invalid Hydrosphere")
+    if population not in HEXES[:11]:
+        raise ValueError("Invalid Population")
     # The rest of these can be arbitrarily high
     if government not in HEXES:
-        raise ValueError
+        raise ValueError("Invalid Government")
     if law not in HEXES:
-        raise ValueError
+        raise ValueError("Invalid Law")
     if tech not in HEXES:
-        raise ValueError
+        raise ValueError("Invalid Technology")
 
 
 def strToUwp(suwp):
@@ -65,7 +65,9 @@ def strToUwp(suwp):
     """
     try:
         sanityCheck(suwp)
-    except ValueError:
+    except ValueError as e:
+        print "UWP error! %s" % str(e)
+        print suwp
         return None
     suwp = suwp.replace('-', '')
     uwp = {}
@@ -152,6 +154,8 @@ def generateHydrosphere(uwp, spaceOpera=True):
     roll += dm
     if roll < 0:
         roll = 0
+    if roll > 10:
+        roll = 10
     return HEXES[roll]
 
 
