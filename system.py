@@ -13,10 +13,10 @@ SUBSECTORS = [
 
 def parseLine(line):
     line = line.strip()
-    if not line:
-        return None
-    if line[0] in ['#']:
-        return None
+    if getIsBlank(line):
+        return {'type': 'blank'}
+    if getIsComment(line):
+        return {'type': 'comment', 'comment': line}
 
     # Make a special case where only the hex number is provided.
     if len(line) == 4:
@@ -36,6 +36,7 @@ def parseLine(line):
     stellar = line[58:]
 
     return {
+        'type': 'system',
         'name': name,
         'hex': hexNumber,
         'uwpString': uwpString,
@@ -50,7 +51,24 @@ def parseLine(line):
     }
 
 
+def getIsBlank(line):
+    line = line.strip()
+    if not line:
+        return True
+    return False
+
+
+def getIsComment(line):
+    if line[0] in ['#']:
+        return True
+    return False
+
+
 def systemToString(system):
+    if system['type'] == 'blank':
+        return ""
+    if system['type'] == 'comment':
+        return system['comment']
     out = ""
     out += system['name'].ljust(13) + ' '
     out += system['hex'] + ' '
@@ -64,7 +82,7 @@ def systemToString(system):
     return out
 
 
-def autocomplete(filename, write=False, update=False):
+def autocomplete(filename, write=False, update=False, show=False):
     systems = []
     with open(filename, 'r') as file:
         for line in file:
@@ -74,17 +92,20 @@ def autocomplete(filename, write=False, update=False):
 
     completedSystems = []
     for system in systems:
-        completed = autocompleteSystem(system, update)
+        if system['type'] == 'system':
+            completed = autocompleteSystem(system, update)
+        else:
+            completed = system
         completedSystems.append(completed)
+
+    if show:
+        for system in completedSystems:
+            print systemToString(system)
 
     if write:
         with open(filename, 'w') as file:
             for system in completedSystems:
                 file.write(systemToString(system) + '\n')
-    else:
-        for system in completedSystems:
-            print systemToString(system)
-
 
 def autocompleteSystem(system, update):
     # All about names
@@ -228,5 +249,3 @@ def generateGasGiants(uwp):
         if giants < 1:
             giants = 1
     return str(giants)
-
-

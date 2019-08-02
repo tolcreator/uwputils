@@ -159,7 +159,7 @@ def generateHydrosphere(uwp, spaceOpera=True):
     return HEXES[roll]
 
 
-def generatePopulation(uwp, hard=True):
+def generatePopulation(uwp, hard=True, max=10):
     size = NUMBERS[uwp['Size']]
     atmosphere = NUMBERS[uwp['Atmosphere']]
 
@@ -177,6 +177,8 @@ def generatePopulation(uwp, hard=True):
     roll += dm
     if roll < 0:
         roll = 0
+    if roll > max:
+        roll = max
     return HEXES[roll]
 
 

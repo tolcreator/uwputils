@@ -1,6 +1,11 @@
 import uwp
 
-for i in range(0, 100):
-    u = uwp.Uwp()
-    u.generate()
-    print u
+def main():
+    for i in range(0, 10000):
+        u = uwp.generate()
+        s = uwp.uwpToStr(u)
+        print s
+        uwp.sanityCheck(s)
+
+if __name__ == "__main__":
+    main()
