@@ -118,6 +118,7 @@ def autocompleteSystem(system, update):
         system['stellar'] = stellar.generate(s)
     return system
 
+
 def generateNameFromHex(hexNumber):
     sanityCheckHexNumber(hexNumber)
 
