@@ -25,14 +25,17 @@ DRAFT_SCHEME = {
             'font': 'Comic Sans MS Bold.ttf',
             'size': 8
         }
-    }
+    },
+    'starport' : {'colour': '#000000', 'font': 'Comic Sans MS Bold.ttf', 'size': 6},
+    'uwp': {'colour': '#000000', 'font': 'Arial.ttf', 'size': 8}
 }
 
 def drawSystem(draw, origin, system, hexSize, scheme):
     s = uwp.strToUwp(system['uwpString'])
     drawDot(draw, origin, s, hexSize, scheme)
     drawName(draw, origin, system['name'], s['Population'], hexSize, scheme)
-
+    drawStarport(draw, origin, s['Starport'], hexSize, scheme)
+    drawUwp(draw, origin, system['uwpString'], hexSize, scheme)
 
 def drawDot(draw, origin, s, hexSize, scheme):
     # Draw Dot
@@ -84,6 +87,29 @@ def drawName(draw, origin, name, population, hexSize, scheme):
             (coords[0] + size[0], coords[1] + size[1] + int(hexSize / 100))
         ]
         draw.line(line, fill=scheme['name']['colour'], width=int(hexSize / 50))
+
+def drawStarport(draw, origin, starport, hexSize, scheme):
+    coords = hexutils.getCenter(origin, hexSize)
+    typeface = scheme['starport']['font']
+    fontsize = scheme['starport']['size']
+    fnt = ImageFont.truetype(typeface, size=int(hexSize / fontsize))
+    size = fnt.getsize(starport)
+    xoff = int(size[0]/2)
+    yoff = size[1] + int(hexSize / 7)
+    coords = (coords[0] - xoff, coords[1] - yoff)
+    draw.text(coords, starport, font=fnt, fill=scheme['starport']['colour'])
+
+
+def drawUwp(draw, origin, uwpString, hexSize, scheme):
+    coords = hexutils.getCenter(origin, hexSize)
+    typeface = scheme['uwp']['font']
+    fontsize = scheme['uwp']['size']
+    fnt = ImageFont.truetype(typeface, size=int(hexSize / fontsize))
+    size = fnt.getsize(uwpString)
+    xoff = int(size[0]/2)
+    yoff = int(hexSize / 7)
+    coords = (coords[0] - xoff, coords[1] + yoff)
+    draw.text(coords, uwpString, font=fnt, fill=scheme['uwp']['colour'])
 
 def drawSector(filename, hexSize, scheme=DRAFT_SCHEME):
     systems = sector.readSystemsFromFile(filename)
