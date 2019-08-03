@@ -82,14 +82,30 @@ def systemToString(system):
     return out
 
 
-def autocomplete(filename, write=False, update=False, show=False):
+def getCoords(system):
+    x = system['hex'][:2]
+    y = system['hex'][2:]
+    return (int(x), int(y))
+
+
+def readSystemsFromFile(filename):
     systems = []
     with open(filename, 'r') as file:
         for line in file:
             parsed = parseLine(line)
             if parsed:
                 systems.append(parsed)
+    return systems
 
+
+def writeSystemsToFile(filename, systems):
+    with open(filename, 'w') as file:
+        for system in systems:
+            file.write(systemToString(system) + '\n')
+
+
+def autocomplete(filename, write=False, update=False, show=False):
+    systems = readSystemsFromFile(filename)
     completedSystems = []
     for system in systems:
         if system['type'] == 'system':
@@ -103,9 +119,8 @@ def autocomplete(filename, write=False, update=False, show=False):
             print systemToString(system)
 
     if write:
-        with open(filename, 'w') as file:
-            for system in completedSystems:
-                file.write(systemToString(system) + '\n')
+        writeSystemsToFile(filename, completedSystems)
+
 
 def autocompleteSystem(system, update):
     # All about names

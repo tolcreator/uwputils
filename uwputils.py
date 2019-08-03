@@ -1,8 +1,8 @@
 import argparse
-import system
+import sector
 
 def main(filename, write, update, show):
-    system.autocomplete(filename, write=write, update=update, show=show)
+    sector.autocomplete(filename, write=write, update=update, show=show)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
