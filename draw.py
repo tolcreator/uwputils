@@ -2,6 +2,7 @@ import hexgrid
 import hexutils
 import uwp
 import sector
+import trade
 from PIL import ImageFont
 import math
 
@@ -30,7 +31,8 @@ DRAFT_SCHEME = {
     'starport' : {'colour': '#000000', 'font': 'Comic Sans MS Bold.ttf', 'size': 6},
     'uwp': {'colour': '#000000', 'font': 'Arial.ttf', 'size': 8},
     'gasgiant': {'colour': '#000000'},
-    'base': {'colour': '#000000'}
+    'base': {'colour': '#000000'},
+    'demographics': {'fill': '#000000', 'outline': '#ffffff'}
 }
 
 
@@ -185,6 +187,58 @@ def drawNavalBase(draw, origin, hexSize, scheme):
     draw.ellipse(box, fill=scheme['base']['colour'])
 
 
+def drawSystemDemographics(draw, origin, system, hexSize, scheme):
+    coords = hexutils.getCenter(origin, hexSize)
+    s = uwp.strToUwp(system['uwpString'])
+    circleTable = {
+        '0': {'base': 0, 'max': 0},
+        '1': {'base': 0.015125, 'max': 0.03125},
+        '2': {'base': 0.03125, 'max': 0.0625},
+        '3': {'base': 0.0625, 'max': 0.125},
+        '4': {'base': 0.125, 'max': 0.25},
+        '5': {'base': 0.25, 'max': 0.5},
+        '6': {'base': 0.5, 'max': 1},
+        '7': {'base': 1, 'max': 2},
+        '8': {'base': 2, 'max': 4},
+        '9': {'base': 4, 'max': 8},
+        'A': {'base': 8, 'max': 16},
+    }
+    base = int(hexSize * circleTable[s['Population']]['base'])
+    if system['p'] in ['1', '2', '3', '4', '5', '6', '7', '8', '9']:
+        max = int(hexSize * circleTable[s['Population']]['max'])
+        range = max - base
+        mod = int(int(system['p']) * range/10)
+    else:
+        mod = 0
+    radius = int((base + mod) / 2)
+    box = [(coords[0] - radius, coords[1] - radius), (coords[0] + radius, coords[1] + radius)]
+    draw.ellipse(box, fill=scheme['demographics']['fill'], outline=scheme['demographics']['outline'], width=int(radius/10))
+
+
+def drawSystemEconomics(draw, origin, wtn, hexSize, scheme):
+    coords = hexutils.getCenter(origin, hexSize)
+    # WTN is a whole non negative integer.
+    circleTable = [
+        0,
+        0.09375,
+        0.0625,
+        0.1875,
+        0.125,
+        0.25,
+        0.375,
+        0.5,
+        0.75,
+        1,
+        1.5,
+        2,
+        # Anything beyond here is probably impossible.
+        3, 4, 6, 8, 12, 16
+    ]
+    radius = int(hexSize * circleTable[wtn])
+    box = [(coords[0] - radius, coords[1] - radius), (coords[0] + radius, coords[1] + radius)]
+    draw.ellipse(box, fill=scheme['demographics']['fill'], outline=scheme['demographics']['outline'],
+                 width=int(radius / 10))
+
 def drawSector(input, output, hexSize=256, scheme=DRAFT_SCHEME):
     systems = sector.readSystemsFromFile(input)
     draw, img = hexgrid.getSectorCanvas(hexSize)
@@ -196,4 +250,39 @@ def drawSector(input, output, hexSize=256, scheme=DRAFT_SCHEME):
     img.save(output)
 
 
+def drawDemographics(input, output, hexSize=256, scheme=DRAFT_SCHEME):
+    systems = sector.readSystemsFromFile(input)
+    demographics = []
+    for system in systems:
+        if system['type'] == 'system':
+            s = uwp.strToUwp(system['uwpString'])
+            demographic = (int(s['Population'], 16), int(system['p']))
+            demographics.append({'demographics': demographic, 'system': system})
+    demographics.sort(key = lambda i: i['demographics'][0], reverse=True)
+    draw, img = hexgrid.getSectorCanvas(hexSize)
+    for entry in demographics:
+        system = entry['system']
+        x, y = sector.getCoords(system)
+        # x,y coords start from 1
+        origin = hexutils.getPosition(x-1, y-1, hexSize)
+        drawSystemDemographics(draw, origin, system, hexSize, scheme)
+    img.save(output)
+
+
+def drawWorldTradeNumber(input, output, hexSize=256, scheme=DRAFT_SCHEME):
+    systems = sector.readSystemsFromFile(input)
+    economics = []
+    for system in systems:
+        if system['type'] == 'system':
+            wtn = trade.getWorldTradeNumber(uwp.strToUwp(system['uwpString']))
+            economics.append({'wtn': wtn, 'system': system})
+    economics.sort(key = lambda i: i['wtn'], reverse=True)
+    draw, img = hexgrid.getSectorCanvas(hexSize)
+    for entry in economics:
+        system = entry['system']
+        x, y = sector.getCoords(system)
+        # x,y coords start from 1
+        origin = hexutils.getPosition(x-1, y-1, hexSize)
+        drawSystemEconomics(draw, origin, entry['wtn'], hexSize, scheme)
+    img.save(output)
 

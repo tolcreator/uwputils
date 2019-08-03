@@ -133,3 +133,31 @@ def generate(uwp):
             trade += code['Code']
             trade += ' '
     return trade
+
+
+def getWorldTradeNumber(uwp):
+    # The tables are so much neater with whole numbers
+    # So these are double those in Far Trader.
+    tlmods = {
+        '0': -1, '1': -1, '2': 0, '3': 0, '4': 0,
+        '5':  1, '6':  1, '7': 1, '8': 1, '9': 2,
+        'A':  2, 'B':  2, 'C': 2, 'D': 2, 'E': 2,
+        'F':  3, 'G':  3
+    }
+    popmod = int(uwp['Population'], 16)
+    wtn = tlmods[uwp['Technology']] + popmod
+
+    starportModifierTable = {
+        #     0  1  2  3  4  5  6  7  8  9  10 11 12 13 14 15 16
+        'A': [3, 3, 2, 2, 2, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0],
+        'B': [2, 2, 2, 1, 1, 1, 1, 0, 0, 0, 0, 0,-1,-1,-2,-2,-2],
+        'C': [2, 1, 1, 1, 1, 1, 0, 0, 0, 0,-1,-1,-2,-2,-3,-3,-3],
+        'D': [1, 1, 1, 0, 0, 0, 0, 0,-1,-1,-2,-2,-3,-3,-4,-4,-4],
+        'E': [1, 1, 0, 0, 0, 0,-1,-1,-2,-2,-3,-3,-4,-4,-5,-5,-5],
+        'X': [0, 0, 0, 0,-5,-5,-6,-6,-7,-7,-8,-8,-9,-9,-10,-10,-10],
+    }
+    starportModifier = starportModifierTable[uwp['Starport']][wtn]
+    wtn += starportModifier
+    if wtn < 0:
+        wtn = 0
+    return wtn
