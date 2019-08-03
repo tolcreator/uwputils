@@ -1,11 +1,8 @@
-import uwp
+import hexgrid
 
 def main():
-    for i in range(0, 100000):
-        u = uwp.generate()
-        s = uwp.uwpToStr(u)
-        print s
-        uwp.sanityCheck(s)
+    hexgrid.createSectorGrid("grid.png")
+    hexgrid.createSectorGrid("blank.png", blank=True)
 
 if __name__ == "__main__":
     main()

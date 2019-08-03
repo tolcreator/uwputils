@@ -7,13 +7,15 @@ DRAFT_SCHEME = {
     'subsectors': '#b93533'
 }
 
-def drawGrid(draw, x, y, hexSize, blank=False):
+
+def drawGrid(draw, x, y, hexSize, scheme, blank):
     for row in range(0, y):
         for column in range(0, x):
-            drawHex(draw, column, row, hexSize, blank)
+            drawHex(draw, column, row, hexSize, scheme, blank)
 
 
-def drawHex(draw, x, y, hexSize, colour=DRAFT_SCHEME['hexes'], blank=False):
+def drawHex(draw, x, y, hexSize, scheme, blank=False):
+    colour = scheme['hexes']
     # Draw the hex outline
     origin = hexutils.getPosition(x, y, hexSize)
     vertices = hexutils.getVertices(hexSize, origin)
@@ -27,7 +29,8 @@ def drawHex(draw, x, y, hexSize, colour=DRAFT_SCHEME['hexes'], blank=False):
         draw.text(position, coords, font=fnt, fill=colour)
 
 
-def drawSubsectorGrid(draw, size, subsectors, hexSize, colour=DRAFT_SCHEME['subsectors']):
+def drawSubsectorGrid(draw, size, subsectors, hexSize, scheme):
+    colour = scheme['subsectors']
     xcoord = 0
     ycoord = 0
     for x in range(1, subsectors):
@@ -40,15 +43,15 @@ def drawSubsectorGrid(draw, size, subsectors, hexSize, colour=DRAFT_SCHEME['subs
         draw.line([(0, yactual), (size[0], yactual)], fill=colour, width=3)
 
 
-def drawSubsector(draw, hexSize):
-    drawGrid(draw, 8, 10, hexSize)
+def drawSubsector(draw, hexSize, scheme, blank):
+    drawGrid(draw, 8, 10, hexSize, scheme, blank)
 
 
-def drawSector(draw, hexSize, blank):
+def drawSector(draw, hexSize, scheme, blank):
     size = hexutils.getImageSize(32, 40, hexSize)
-    drawGrid(draw, 32, 40, hexSize, blank)
+    drawGrid(draw, 32, 40, hexSize, scheme, blank)
     if not blank:
-        drawSubsectorGrid(draw, size, 4, hexSize)
+        drawSubsectorGrid(draw, size, 4, hexSize, scheme)
 
 
 def getSubsectorCanvas(hexSize):
@@ -67,5 +70,11 @@ def getSectorCanvas(hexSize):
 
 def createSectorGrid(filename, hexSize=256, blank=False):
     draw, img = getSectorCanvas(hexSize)
-    drawSector(draw, hexSize, blank)
+    drawSector(draw, hexSize, DRAFT_SCHEME, blank)
+    img.save(filename)
+
+
+def createSubsectorGrid(filename, hexSize=256, blank=False):
+    draw, img = getSubsectorCanvas(hexSize)
+    drawSubsector(draw, hexSize, DRAFT_SCHEME, blank)
     img.save(filename)
