@@ -3,6 +3,7 @@ import hexutils
 import uwp
 import sector
 from PIL import ImageFont
+import math
 
 DRAFT_SCHEME = {
     'worlds': {
@@ -27,8 +28,11 @@ DRAFT_SCHEME = {
         }
     },
     'starport' : {'colour': '#000000', 'font': 'Comic Sans MS Bold.ttf', 'size': 6},
-    'uwp': {'colour': '#000000', 'font': 'Arial.ttf', 'size': 8}
+    'uwp': {'colour': '#000000', 'font': 'Arial.ttf', 'size': 8},
+    'gasgiant': {'colour': '#000000'},
+    'base': {'colour': '#000000'}
 }
+
 
 def drawSystem(draw, origin, system, hexSize, scheme):
     s = uwp.strToUwp(system['uwpString'])
@@ -36,6 +40,8 @@ def drawSystem(draw, origin, system, hexSize, scheme):
     drawName(draw, origin, system['name'], s['Population'], hexSize, scheme)
     drawStarport(draw, origin, s['Starport'], hexSize, scheme)
     drawUwp(draw, origin, system['uwpString'], hexSize, scheme)
+    drawGasGiant(draw, origin, system['g'], hexSize, scheme)
+    drawBase(draw, origin, system['base'], hexSize, scheme)
 
 def drawDot(draw, origin, s, hexSize, scheme):
     # Draw Dot
@@ -88,6 +94,7 @@ def drawName(draw, origin, name, population, hexSize, scheme):
         ]
         draw.line(line, fill=scheme['name']['colour'], width=int(hexSize / 50))
 
+
 def drawStarport(draw, origin, starport, hexSize, scheme):
     coords = hexutils.getCenter(origin, hexSize)
     typeface = scheme['starport']['font']
@@ -110,6 +117,73 @@ def drawUwp(draw, origin, uwpString, hexSize, scheme):
     yoff = int(hexSize / 7)
     coords = (coords[0] - xoff, coords[1] + yoff)
     draw.text(coords, uwpString, font=fnt, fill=scheme['uwp']['colour'])
+
+
+def drawGasGiant(draw, origin, giant, hexSize, scheme):
+    if giant not in ['0', ' ']:
+        coords = hexutils.getCenter(origin, hexSize)
+        xoff = hexutils.widthBlock(hexSize)
+        yoff = int(hexutils.heightBlock(hexSize) / 2)
+        coords = (coords[0] + xoff, coords[1] - yoff)
+        offset = int(hexSize / 25)
+        box = [(coords[0] - offset, coords[1] - offset), (coords[0] + offset, coords[1] + offset)]
+        draw.ellipse(box, fill=scheme['gasgiant']['colour'])
+
+
+# Don't draw pirates!
+def drawBase(draw, origin, base, hexSize, scheme):
+    scout = False
+    naval = False
+    if base in ['S', 'A', 'G']:
+        scout = True
+    if base in ['N', 'A']:
+        naval = True
+    if scout:
+        drawScoutBase(draw, origin, hexSize, scheme)
+    if naval:
+        drawNavalBase(draw, origin, hexSize, scheme)
+
+
+def drawScoutBase(draw, origin, hexSize, scheme):
+    coords = hexutils.getCenter(origin, hexSize)
+    xoff = hexutils.widthBlock(hexSize)
+    coords = (coords[0] - xoff, coords[1])
+    height = hexSize / 12
+    xoff = int(height / math.sqrt(3))
+    yoff = int(height)
+    vertices = [
+        (coords[0], coords[1]),
+        (coords[0] - xoff, coords[1] + yoff),
+        (coords[0] + xoff, coords[1] + yoff),
+        (coords[0], coords[1])
+    ]
+    draw.polygon(vertices, fill=scheme['base']['colour'])
+
+
+def drawNavalBase(draw, origin, hexSize, scheme):
+    coords = hexutils.getCenter(origin, hexSize)
+    xoff = hexutils.widthBlock(hexSize)
+    yoff = int(hexutils.heightBlock(hexSize) / 2)
+    coords = (coords[0] - xoff, coords[1] - yoff)
+    height = hexSize / 12
+    pentagon = []
+    for n in range(0, 5):
+        x = height * math.cos(math.radians(270+n*72))
+        y = height * math.sin(math.radians(270+n*72))
+        pentagon.append((int(x), int(y)))
+    vertices = [
+        coords[0] + pentagon[0][0], coords[1] + pentagon[0][1],
+        coords[0] + pentagon[2][0], coords[1] + pentagon[2][1],
+        coords[0] + pentagon[4][0], coords[1] + pentagon[4][1],
+        coords[0] + pentagon[1][0], coords[1] + pentagon[1][1],
+        coords[0] + pentagon[3][0], coords[1] + pentagon[3][1],
+        coords[0] + pentagon[0][0], coords[1] + pentagon[0][1],
+    ]
+    draw.polygon(vertices, fill=scheme['base']['colour'])
+    height = int(height/4)+1
+    box = [(coords[0] - height, coords[1] - height), (coords[0] + height, coords[1] + height)]
+    draw.ellipse(box, fill=scheme['base']['colour'])
+
 
 def drawSector(filename, hexSize, scheme=DRAFT_SCHEME):
     systems = sector.readSystemsFromFile(filename)

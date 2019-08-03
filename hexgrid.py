@@ -7,23 +7,24 @@ DRAFT_SCHEME = {
     'subsectors': '#b93533'
 }
 
-def drawGrid(draw, x, y, hexSize):
+def drawGrid(draw, x, y, hexSize, blank=False):
     for row in range(0, y):
         for column in range(0, x):
-            drawHex(draw, column, row, hexSize)
+            drawHex(draw, column, row, hexSize, blank)
 
 
-def drawHex(draw, x, y, hexSize, colour=DRAFT_SCHEME['hexes']):
+def drawHex(draw, x, y, hexSize, colour=DRAFT_SCHEME['hexes'], blank=False):
     # Draw the hex outline
     origin = hexutils.getPosition(x, y, hexSize)
     vertices = hexutils.getVertices(hexSize, origin)
     draw.line(vertices, fill=colour, width=2)
     # Write the hex coordinates
-    fnt = ImageFont.truetype('Arial.ttf', size=int(hexSize / 10))
-    coords = "%02d%02d" % (x+1, y+1)
-    size = fnt.getsize(coords)
-    position = ((hexutils.widthBlock(hexSize) * 2) - int(size[0]/2) + origin[0], origin[1] + 3)
-    draw.text(position, coords, font=fnt, fill=colour)
+    if not blank:
+        fnt = ImageFont.truetype('Arial.ttf', size=int(hexSize / 10))
+        coords = "%02d%02d" % (x+1, y+1)
+        size = fnt.getsize(coords)
+        position = ((hexutils.widthBlock(hexSize) * 2) - int(size[0]/2) + origin[0], origin[1] + 3)
+        draw.text(position, coords, font=fnt, fill=colour)
 
 
 def drawSubsectorGrid(draw, size, subsectors, hexSize, colour=DRAFT_SCHEME['subsectors']):
@@ -43,10 +44,11 @@ def drawSubsector(draw, hexSize):
     drawGrid(draw, 8, 10, hexSize)
 
 
-def drawSector(draw, hexSize):
+def drawSector(draw, hexSize, blank):
     size = hexutils.getImageSize(32, 40, hexSize)
-    drawGrid(draw, 32, 40, hexSize)
-    drawSubsectorGrid(draw, size, 4, hexSize)
+    drawGrid(draw, 32, 40, hexSize, blank)
+    if not blank:
+        drawSubsectorGrid(draw, size, 4, hexSize)
 
 
 def getSubsectorCanvas(hexSize):
@@ -63,8 +65,7 @@ def getSectorCanvas(hexSize):
     return draw, img
 
 
-def createSectorGrid(filename, hexSize=256):
+def createSectorGrid(filename, hexSize=256, blank=False):
     draw, img = getSectorCanvas(hexSize)
-    drawSector(draw, hexSize)
+    drawSector(draw, hexSize, blank)
     img.save(filename)
-
