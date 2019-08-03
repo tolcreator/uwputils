@@ -185,15 +185,15 @@ def drawNavalBase(draw, origin, hexSize, scheme):
     draw.ellipse(box, fill=scheme['base']['colour'])
 
 
-def drawSector(filename, hexSize, scheme=DRAFT_SCHEME):
-    systems = sector.readSystemsFromFile(filename)
+def drawSector(input, output, hexSize=256, scheme=DRAFT_SCHEME):
+    systems = sector.readSystemsFromFile(input)
     draw, img = hexgrid.getSectorCanvas(hexSize)
     for system in (system for system in systems if system['type'] == 'system'):
         x, y = sector.getCoords(system)
         # x,y coords start from 1
         origin = hexutils.getPosition(x-1, y-1, hexSize)
         drawSystem(draw, origin, system, hexSize, scheme)
-    img.save('sector.png')
+    img.save(output)
 
 
 
