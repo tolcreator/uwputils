@@ -3,6 +3,7 @@ import hexutils
 import uwp
 import sector
 import trade
+import political
 from PIL import ImageFont
 import math
 
@@ -187,7 +188,7 @@ def drawNavalBase(draw, origin, hexSize, scheme):
     draw.ellipse(box, fill=scheme['base']['colour'])
 
 
-def drawSystemDemographics(draw, origin, system, hexSize, scheme):
+def drawSystemDemographics(draw, origin, system, hexSize, colour):
     coords = hexutils.getCenter(origin, hexSize)
     s = uwp.strToUwp(system['uwpString'])
     circleTable = {
@@ -212,10 +213,10 @@ def drawSystemDemographics(draw, origin, system, hexSize, scheme):
         mod = 0
     radius = int((base + mod) / 2)
     box = [(coords[0] - radius, coords[1] - radius), (coords[0] + radius, coords[1] + radius)]
-    draw.ellipse(box, fill=scheme['demographics']['fill'], outline=scheme['demographics']['outline'], width=int(radius/10))
+    draw.ellipse(box, fill=colour, outline='#ffffff', width=int(radius/10))
 
 
-def drawSystemEconomics(draw, origin, wtn, hexSize, scheme):
+def drawSystemEconomics(draw, origin, wtn, hexSize, colour):
     coords = hexutils.getCenter(origin, hexSize)
     # WTN is a whole non negative integer.
     circleTable = [
@@ -236,8 +237,7 @@ def drawSystemEconomics(draw, origin, wtn, hexSize, scheme):
     ]
     radius = int(hexSize * circleTable[wtn])
     box = [(coords[0] - radius, coords[1] - radius), (coords[0] + radius, coords[1] + radius)]
-    draw.ellipse(box, fill=scheme['demographics']['fill'], outline=scheme['demographics']['outline'],
-                 width=int(radius / 10))
+    draw.ellipse(box, fill=colour, outline="#ffffff", width=int(radius / 10))
 
 def drawSector(input, output, hexSize=256, scheme=DRAFT_SCHEME):
     systems = sector.readSystemsFromFile(input)
@@ -252,6 +252,7 @@ def drawSector(input, output, hexSize=256, scheme=DRAFT_SCHEME):
 
 def drawDemographics(input, output, hexSize=256, scheme=DRAFT_SCHEME):
     systems = sector.readSystemsFromFile(input)
+    politicalPalette = political.constructPalette(systems)
     demographics = []
     for system in systems:
         if system['type'] == 'system':
@@ -265,12 +266,13 @@ def drawDemographics(input, output, hexSize=256, scheme=DRAFT_SCHEME):
         x, y = sector.getCoords(system)
         # x,y coords start from 1
         origin = hexutils.getPosition(x-1, y-1, hexSize)
-        drawSystemDemographics(draw, origin, system, hexSize, scheme)
+        drawSystemDemographics(draw, origin, system, hexSize, politicalPalette[entry['system']['allegiance']])
     img.save(output)
 
 
 def drawWorldTradeNumber(input, output, hexSize=256, scheme=DRAFT_SCHEME):
     systems = sector.readSystemsFromFile(input)
+    politicalPalette = political.constructPalette(systems)
     economics = []
     for system in systems:
         if system['type'] == 'system':
@@ -283,6 +285,6 @@ def drawWorldTradeNumber(input, output, hexSize=256, scheme=DRAFT_SCHEME):
         x, y = sector.getCoords(system)
         # x,y coords start from 1
         origin = hexutils.getPosition(x-1, y-1, hexSize)
-        drawSystemEconomics(draw, origin, entry['wtn'], hexSize, scheme)
+        drawSystemEconomics(draw, origin, entry['wtn'], hexSize, politicalPalette[entry['system']['allegiance']])
     img.save(output)
 
