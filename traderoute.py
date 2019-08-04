@@ -3,9 +3,11 @@ import trade
 import uwp
 
 BTN_CUTOFF = 8
-
+JUMP_CUTOFF = 20
 
 def getPathsFrom(src, dest, systems, pathfrom, paths, jumprange):
+    if len(pathfrom) > JUMP_CUTOFF:
+        return
     space = list(systems)
     neighbours = hexutils.getNeighbours(src, space, jumprange)
     if neighbours:
@@ -68,7 +70,7 @@ def getPathDistance(path):
     return distance
 
 
-def getBestPath(src, dest, systems, jumprange=2):
+def getBestPath(src, dest, systems, jumprange):
     paths = []
     pathto = []
 
@@ -84,12 +86,15 @@ def getBestPath(src, dest, systems, jumprange=2):
             if value > bestvalue:
                 bestpath = path
                 bestvalue = value
+            if value == bestvalue:
+                if len(path) < len(bestpath):
+                    bestpath = path
         return bestpath
     else:
         return None
 
 
-def getTradeRoute(source, dest, systems):
+def getTradeRoute(source, dest, systems, jumprange=2):
     ubtn = trade.getUnmodifiedBilateralTradeNumber(source, dest)
     swtn = trade.getWorldTradeNumber(uwp.strToUwp(source['uwpString']))
     dwtn = trade.getWorldTradeNumber(uwp.strToUwp(dest['uwpString']))
@@ -97,7 +102,7 @@ def getTradeRoute(source, dest, systems):
     if ubtn < BTN_CUTOFF:
         return None
 
-    path = getBestPath(source, dest, systems, 2)
+    path = getBestPath(source, dest, systems, jumprange)
     if path:
         btn = ubtn + evaluatePath(path)
     else:

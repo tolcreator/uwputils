@@ -1,12 +1,33 @@
-import hexgrid
-import draw
+import sector
+import traderoute
+import sys
 
-def main():
-    size=128
-    hexgrid.createSectorGrid("grid.png", hexSize=size)
-    hexgrid.createSectorGrid("blank.png", hexSize=size, blank=True)
-    draw.drawSector("uwp.txt", "sector.png", hexSize=size)
-    draw.drawDemographics("uwp.txt", "demographics.png", hexSize=size)
-    draw.drawWorldTradeNumber("uwp.txt", "wtn.png", hexSize=size)
+def main(filename, sourceHex, destHex):
+    systems = sector.readSystemsFromFile(filename)
+    systems = sector.stripNonSystems(systems)
+
+    source = None
+    dest = None
+
+    for system in systems:
+        if system['hex'] == sourceHex:
+            source = system
+        if system['hex'] == destHex:
+            dest = system
+
+    if source and dest:
+        route = traderoute.getTradeRoute(source, dest, systems, 2)
+        if route:
+            print "btn: " + str(route['btn']) + " len: " + str(len(route['path']))
+            for node in route['path']:
+                print node['name'] + ' ' + node['hex'] + ' ' + node['uwpString']
+        else:
+            print "No viable route found."
+    else:
+        print "Could not find %s %s" % (sourceHex, destHex)
+
 if __name__ == "__main__":
-    main()
+    filename = sys.argv[1]
+    source = sys.argv[2]
+    dest = sys.argv[3]
+    main(filename, source, dest)
