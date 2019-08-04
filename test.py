@@ -1,6 +1,7 @@
 import sector
 import traderoute
 import sys
+import hexutils
 
 def main(filename, sourceHex, destHex):
     systems = sector.readSystemsFromFile(filename)
@@ -16,7 +17,8 @@ def main(filename, sourceHex, destHex):
             dest = system
 
     if source and dest:
-        route = traderoute.getTradeRoute(source, dest, systems, 2)
+        map = hexutils.constructDistanceMap(systems)
+        route = traderoute.getTradeRoute(source, dest, systems, map, 2)
         if route:
             print "btn: " + str(route['btn']) + " len: " + str(len(route['path']))
             for node in route['path']:

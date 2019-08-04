@@ -124,3 +124,31 @@ def getNeighbours(src, systems, jumprange):
         if d <= jumprange and d > 0:
             neighbours.append(dest)
     return neighbours
+
+
+def getNeighboursWithMap(source, systems, map, jumprange):
+    neighbours = []
+    for dest in systems:
+        d = map[source['index']][dest['index']]
+        if d and d <= jumprange:
+            neighbours.append(dest)
+    return neighbours
+
+
+def constructDistanceMap(systems):
+    map = []
+    index = 0
+    for system in systems:
+        system['coords'] = (int(system['hex'][:2]), int(system['hex'][2:]))
+        system['index'] = index
+        index += 1
+    for source in systems:
+        x1 = source['coords'][0]
+        y1 = source['coords'][1]
+        entry = []
+        for dest in systems:
+            x2 = dest['coords'][0]
+            y2 = dest['coords'][1]
+            entry.append(calculateDistanceInt(x1, y1, x2, y2))
+        map.append(entry)
+    return map

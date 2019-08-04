@@ -4,16 +4,15 @@ import uwp
 
 BTN_CUTOFF = 8
 JUMP_CUTOFF = 20
-
 gIterations = 0
 
-def getPathsFrom(src, dest, systems, pathfrom, paths, jumprange):
+def getPathsFrom(src, dest, systems, pathfrom, paths, map, jumprange):
     global gIterations
     gIterations = gIterations + 1
     if len(pathfrom) > JUMP_CUTOFF:
         return
     space = list(systems)
-    neighbours = hexutils.getNeighbours(src, space, jumprange)
+    neighbours = hexutils.getNeighboursWithMap(src, space, map, jumprange)
     if neighbours:
         pathfrom.append(src)
         currentvalue = evaluatePath(pathfrom, partial=True)
@@ -37,7 +36,7 @@ def getPathsFrom(src, dest, systems, pathfrom, paths, jumprange):
                 space.remove(pot)
             for pot in neighbours:
                 pathto = list(pathfrom)
-                getPathsFrom(pot, dest, space, pathto, paths, jumprange)
+                getPathsFrom(pot, dest, space, pathto, paths, map, jumprange)
 
 
 def getBestPathOf(paths):
@@ -73,7 +72,7 @@ def getPathDistance(path):
     return distance
 
 
-def getBestPath(src, dest, systems, jumprange):
+def getBestPath(src, dest, systems, map, jumprange):
     global gIterations
     paths = []
     pathto = []
@@ -81,7 +80,7 @@ def getBestPath(src, dest, systems, jumprange):
     space = list(systems)
     space.remove(src)
     gIterations = 0
-    getPathsFrom(src, dest, space, pathto, paths, jumprange)
+    getPathsFrom(src, dest, space, pathto, paths, map, jumprange)
     print gIterations
     if paths:
         bestpath = paths[0]
@@ -99,7 +98,7 @@ def getBestPath(src, dest, systems, jumprange):
         return None
 
 
-def getTradeRoute(source, dest, systems, jumprange=2):
+def getTradeRoute(source, dest, systems, map, jumprange=2):
     source['wtn'] = trade.getWorldTradeNumber(uwp.strToUwp(source['uwpString']))
     dest['wtn'] = trade.getWorldTradeNumber(uwp.strToUwp(dest['uwpString']))
     ubtn = trade.getUnmodifiedBilateralTradeNumber(source, dest)
@@ -107,7 +106,7 @@ def getTradeRoute(source, dest, systems, jumprange=2):
     if ubtn < BTN_CUTOFF:
         return None
 
-    path = getBestPath(source, dest, systems, jumprange)
+    path = getBestPath(source, dest, systems, map, jumprange)
     if path:
         btn = ubtn + evaluatePath(path)
     else:
