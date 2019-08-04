@@ -51,6 +51,13 @@ def parseLine(line):
     }
 
 
+def stripNonSystems(systems):
+    ret = []
+    for system in systems:
+        if system['type'] == 'system':
+            ret.append(system)
+    return ret
+
 def getIsBlank(line):
     line = line.strip()
     if not line:

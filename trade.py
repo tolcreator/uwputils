@@ -1,4 +1,6 @@
-# Works off the dictionaries as generated in uwp.py
+import uwp
+import math
+
 
 def getIsAgricultural(uwp):
     if uwp['Atmosphere'] in ['4', '5', '6', '7', '8', '9'] \
@@ -161,3 +163,64 @@ def getWorldTradeNumber(uwp):
     if wtn < 0:
         wtn = 0
     return wtn
+
+
+def getWorldTradeCodeModifier(source, dest):
+    wtcm = 0
+    sourceTrades = source['trade'].split()
+    destTrades = dest['trade'].split()
+    if 'Ag' in sourceTrades and getLikesAg(destTrades):
+        wtcm = wtcm + 1
+    elif 'Ag' in destTrades and getLikesAg(sourceTrades):
+        wtcm = wtcm + 1
+    if 'In' in sourceTrades and 'Ni' in destTrades:
+        wtcm = wtcm + 1
+    elif 'In' in destTrades and 'Ni' in sourceTrades:
+        wtcm = wtcm + 1
+    return wtcm
+
+
+def getLikesAg(trades):
+    likesAg = ['Na', 'As', 'De', 'Fl', 'Ic', 'Va']
+    # Note: set(a) & set(b) gives a set containing their common entries.
+    if set(likesAg) & set(trades):
+        return True
+    return False
+
+
+def getTradeDistanceModifier(distance):
+    dm = 12
+    if distance < 2: dm = 0
+    elif distance < 3: dm = 1
+    elif distance < 6: dm = 2
+    elif distance < 10: dm = 3
+    elif distance < 20: dm = 4
+    elif distance < 30: dm = 5
+    elif distance < 60: dm = 6
+    elif distance < 100: dm = 7
+    elif distance < 200: dm = 8
+    elif distance < 300: dm = 9
+    elif distance < 600: dm = 10
+    elif distance < 1000: dm = 11
+    return dm
+
+
+def getPathStarportModifier(starport):
+    return {'X': 3, 'E': 2, 'D': 1, 'C': 0, 'B': 0, 'A': 0}[starport]
+
+
+def getUnmodifiedBilateralTradeNumber(source, dest):
+    """
+    It is unmodified with respect to the path between the worlds.
+    :param source:
+    :param dest:
+    :return:
+    """
+    return getWorldTradeNumber(uwp.strToUwp(source['uwpString'])) + \
+            getWorldTradeNumber(uwp.strToUwp(dest['uwpString'])) + \
+            getWorldTradeCodeModifier(source, dest)
+
+
+def btnAdder(btn1, btn2):
+    return math.log10(math.pow(10, btn1) + math.pow(10, btn2))
+
