@@ -5,7 +5,11 @@ import uwp
 BTN_CUTOFF = 8
 JUMP_CUTOFF = 20
 
+gIterations = 0
+
 def getPathsFrom(src, dest, systems, pathfrom, paths, jumprange):
+    global gIterations
+    gIterations = gIterations + 1
     if len(pathfrom) > JUMP_CUTOFF:
         return
     space = list(systems)
@@ -55,8 +59,7 @@ def evaluatePath(path, partial=False):
     else:
         toevaluate = path[1:-1]
     for node in toevaluate:
-        s = uwp.strToUwp(node['uwpString'])
-        spm += trade.getPathStarportModifier(s['Starport'])
+        spm += trade.getPathStarportModifier(node['uwpString'][0])
     return (dm + spm) * -1
 
 
@@ -71,13 +74,15 @@ def getPathDistance(path):
 
 
 def getBestPath(src, dest, systems, jumprange):
+    global gIterations
     paths = []
     pathto = []
 
     space = list(systems)
     space.remove(src)
+    gIterations = 0
     getPathsFrom(src, dest, space, pathto, paths, jumprange)
-
+    print gIterations
     if paths:
         bestpath = paths[0]
         bestvalue = evaluatePath(paths[0])
@@ -95,9 +100,9 @@ def getBestPath(src, dest, systems, jumprange):
 
 
 def getTradeRoute(source, dest, systems, jumprange=2):
+    source['wtn'] = trade.getWorldTradeNumber(uwp.strToUwp(source['uwpString']))
+    dest['wtn'] = trade.getWorldTradeNumber(uwp.strToUwp(dest['uwpString']))
     ubtn = trade.getUnmodifiedBilateralTradeNumber(source, dest)
-    swtn = trade.getWorldTradeNumber(uwp.strToUwp(source['uwpString']))
-    dwtn = trade.getWorldTradeNumber(uwp.strToUwp(dest['uwpString']))
 
     if ubtn < BTN_CUTOFF:
         return None
@@ -108,7 +113,7 @@ def getTradeRoute(source, dest, systems, jumprange=2):
     else:
         return None
 
-    jr = min(swtn, dwtn)
+    jr = min(source['wtn'], dest['wtn'])
     if btn > (jr + 5):
         btn = jr + 5
 

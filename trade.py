@@ -216,9 +216,11 @@ def getUnmodifiedBilateralTradeNumber(source, dest):
     :param dest:
     :return:
     """
-    return getWorldTradeNumber(uwp.strToUwp(source['uwpString'])) + \
-            getWorldTradeNumber(uwp.strToUwp(dest['uwpString'])) + \
-            getWorldTradeCodeModifier(source, dest)
+    if 'wtn' not in source:
+        source['wtn'] = getWorldTradeNumber(uwp.strToUwp(source['uwpString']))
+    if 'wtn' not in dest:
+        dest['wtn'] = getWorldTradeNumber(uwp.strToUwp(dest['uwpString']))
+    return source['wtn'] + dest['wtn'] + getWorldTradeCodeModifier(source, dest)
 
 
 def btnAdder(btn1, btn2):

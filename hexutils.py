@@ -61,7 +61,7 @@ def getVertices(hexSize, origin):
     return vertices
 
 
-def calculateDistance(src, des):
+def calculateDistance(src, dest):
     """
     get_dist( int x1, int y1, int x2, int y2 ) {
         int     dx, dy;
@@ -77,11 +77,10 @@ def calculateDistance(src, des):
     :return: Distance between them.
     """
 
-    x1 = int(src[:2])
-    y1 = int(src[2:])
-    x2 = int(des[:2])
-    y2 = int(des[2:])
+    return calculateDistanceInt(int(src[:2]), int(src[2:]), int(dest[:2]), int(dest[2:]))
 
+
+def calculateDistanceInt(x1, y1, x2, y2):
     y1 = y1 * 2
     if not (x1 % 2):
         y1 = y1 + 1
@@ -89,10 +88,13 @@ def calculateDistance(src, des):
     if not (x2 % 2):
         y2 = y2 + 1
     dy = y2 - y1
-    if dy < 1: dy = dy * -1
+    if dy < 1:
+        dy = dy * -1
     dx = x2 - x1
-    if dx < 1: dx = dx * -1
-    if dx > dy: return dx
+    if dx < 1:
+        dx = dx * -1
+    if dx > dy:
+        return dx
     return (dx + dy) / 2
 
 
@@ -105,8 +107,20 @@ def getNeighbours(src, systems, jumprange):
     :return:
     """
     neighbours = []
+    if 'coords' not in src:
+        src['coords'] = (int(src['hex'][:2]), int(src['hex'][2:]))
+    x1 = src['coords'][0]
+    y1 = src['coords'][1]
     for dest in systems:
-        d = calculateDistance(src['hex'], dest['hex'])
+        if 'coords' not in dest:
+            dest['coords'] = (int(dest['hex'][:2]), int(dest['hex'][2:]))
+        x2 = dest['coords'][0]
+        y2 = dest['coords'][1]
+        if abs(x1 - x2) > jumprange + 1:
+            continue
+        if abs(y1 - y2) > jumprange + 1:
+            continue
+        d = calculateDistanceInt(x1, y1, x2, y2)
         if d <= jumprange and d > 0:
             neighbours.append(dest)
     return neighbours
