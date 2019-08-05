@@ -3,6 +3,13 @@
 #include <string.h>
 
 #define MAX_LINE_LENGTH 80
+#define MAX_PATH_STRING_LENGTH 280
+#define MAX_PATH_LENGTH 20
+#define MAX_PATHS 4096
+// Jump range of 4 with every system populated
+#define MAX_NEIGHBOURS 60
+// Change above if you change this.
+#define MAX_JUMP_RANGE 4
 
 enum tradeCodes {
     Ag, As, Ba, De, Fl, Ga, Hi, Ht, Ic, In, Lo, Lt, Na, Ni, Po, Ri, Wa, Va
@@ -17,7 +24,24 @@ typedef struct StarSystem {
     int numTrades;
     enum tradeCodes trades[5];
     int wtn;
+    int ag;
+    int likesag;
+    int ni;
+    int in;
 } starSystem;
+
+typedef struct Path {
+    int numNodes;
+    int length;
+    int starportmods;
+    int nodes[MAX_PATH_LENGTH];
+} path;
+
+typedef struct PathSet {
+    int numpaths;
+    int bestvalue;
+    path paths[MAX_PATHS];
+} pathSet;
 
 int readFromFile(char* filename, char* buffer[]);
 int getNumLinesInFile(char* filename);
@@ -31,6 +55,14 @@ int getWtn(starSystem s);
 int getWtnTechMod(int tech);
 int getWtnStarportMod(char starport, int uwtn);
 void printSystem(starSystem s);
+int getWorldTradeCodeModifier(starSystem origin, starSystem destination);
+void getTradeRoute(int origin, int destination, int numSystems, starSystem* systems, int* map[], int jumprange, int cutoff);
+void getBestPath(int origin, int destination, int numSystems, starSystem* systems, int* map[], int jumprange);
+int removeSystem(int space[], int numSystems, int origin);
+int getNeighbours(int origin, int numSystems, int* space, int* map[], int* neighbours, int jumprange);
+void getPathsFrom(int origin, int destination, int numSystems, int* space, starSystem* system, int* map[], pathSet* paths, path pathFrom, int jumprange, int cutoff);
+int getBtnDistanceMod(int d);
+int getBtnStarportMod(char starport);
 
 int main(int argc, char * argv[]){
     char * filename;
@@ -41,8 +73,16 @@ int main(int argc, char * argv[]){
     int j;
     int lines;
     int numSystems;
+    int origin;
+    int destination;
+    int jumprange = 2;
+    int cutoff = MAX_PATH_LENGTH;
 
     filename = argv[1];
+    if(argc == 3){
+        cutoff = strtol(argv[2], 0, 10);
+    }
+
     lines = getNumLinesInFile(filename);
     if(lines == 0) return -1;
 
@@ -60,8 +100,15 @@ int main(int argc, char * argv[]){
     numSystems = parseFile(lines, buffer, systems);
     constructDistanceMap(numSystems, systems, map);
 
+    /*
     for(i = 0; i < numSystems; i++){
         printSystem(systems[i]);
+    }*/
+
+    for(origin = 0; origin < numSystems; origin++){
+        for(destination = origin+1; destination  < numSystems; destination++){
+            getTradeRoute(origin, destination, numSystems, systems, map, jumprange, cutoff);
+        }
     }
 
     // Cleanup
@@ -138,6 +185,8 @@ int parseSystem(char* buffer, starSystem* starSystem){
     char* trades = buffer + 31;
     int done = 0;
     int i;
+    int j;
+    enum tradeCodes likesag[] = {Na, As, De, Fl, Ic, Va};
 
     if(buffer[0] == '#') return -1;
     if(buffer[0] == '\n') return -1;
@@ -156,10 +205,28 @@ int parseSystem(char* buffer, starSystem* starSystem){
 
     // Get number of trades
     starSystem->numTrades = 0;
+    starSystem->ag = 0;
+    starSystem->likesag = 0;
+    starSystem->ni = 0;
+    starSystem->in = 0;
     for(i = 0; i < 5; i++){
         if(!strncmp(trades+(i*3), "  ", 2))
             break;
         starSystem->trades[starSystem->numTrades] = getTradeCode(trades+(i*3));
+        if(starSystem->trades[starSystem->numTrades] == Ag){
+            starSystem->ag = 1;
+        }
+        if(starSystem->trades[starSystem->numTrades] == Ni){
+            starSystem->ni = 1;
+        }
+        if(starSystem->trades[starSystem->numTrades] == In){
+            starSystem->in = 1;
+        }
+        for(j = 0; j < 6; j++){
+            if(starSystem->trades[starSystem->numTrades] == likesag[j]){
+                starSystem->likesag = 1;
+            }
+        }
         starSystem->numTrades++;
     }
     starSystem->wtn = getWtn(*starSystem);
@@ -252,5 +319,188 @@ int getWtnStarportMod(char starport, int uwtn){
     if(starport == 'E') return emod[uwtn];
     if(starport == 'X') return xmod[uwtn];
     return 0;
+}
+
+int getWorldTradeCodeModifier(starSystem origin, starSystem destination){
+    int dm = 0;
+    if((origin.ag) && (destination.likesag)) dm++;
+    if((destination.ag) && (origin.likesag)) dm++;
+    if((origin.ni) && (destination.in)) dm++;
+    if((destination.ni) && (origin.in)) dm++;
+    return dm;
+}
+
+void getTradeRoute(int origin, int destination, int numSystems, starSystem* systems, int* map[], int jumprange, int cutoff){
+    int ubtn;
+    int* space;
+    int i;
+    pathSet paths;
+    path start;
+    int bestvalue;
+    int best;
+    int value;
+    int s;
+
+    ubtn = systems[origin].wtn +
+        systems[destination].wtn +
+        getWorldTradeCodeModifier(
+            systems[origin],
+            systems[destination]);
+
+    // Set up initial space
+    space = (int*)malloc(numSystems * sizeof(int));
+    for(i = 0; i < numSystems; i++){
+        space[i] = i;
+    }
+
+    // Remove the origin
+    numSystems = removeSystem(space, numSystems, origin);
+    free(space);
+
+    start.numNodes = 0;
+    start.length = 0;
+    start.starportmods = 0;
+    paths.numpaths = 0;
+    paths.bestvalue = -1000;
+    getPathsFrom(origin, destination, numSystems, space, systems, map, &paths, start, jumprange, cutoff);
+    bestvalue = 0;
+    best = 0;
+
+    for(i = 0; i < paths.numpaths; i++){
+        value = ubtn + paths.paths[i].starportmods + getBtnDistanceMod(paths.paths[i].length);
+        if(value > bestvalue){
+            best = i;
+        }
+    }
+    if(best){
+        printf("%02d%02d->%02d%02d %02d %02d: ",
+            systems[origin].x,
+            systems[origin].y,
+            systems[destination].x,
+            systems[destination].y,
+            ubtn + paths.paths[best].starportmods + getBtnDistanceMod(paths.paths[best].length),
+            paths.paths[best].numNodes
+        );
+        for(i = 0; i < paths.paths[best].numNodes; i++){
+            s =paths.paths[best].nodes[i];
+            printf("%02d%02d ", systems[s].x, systems[s].y);
+        }
+        printf("\n");
+    }
+}
+
+int removeSystem(int space[], int numSystems, int origin){
+    int i;
+    for(i = 0; i < numSystems; i++){
+        if(space[i] == origin){
+            for(; i < numSystems-1; i++){
+                space[i] = space[i+1];
+            }
+            return numSystems - 1;
+        }
+    }
+    printf("Didn't find system %d to remove!\n", origin);
+    return 0;
+}
+
+void getPathsFrom(int origin, int destination, int numSystems, int* space, starSystem* systems, int* map[], pathSet* paths, path pathFrom, int jumprange, int cutoff){
+    int numNeighbours;
+    int neighbours[MAX_NEIGHBOURS];
+    int i;
+    int* subspace;
+    int currentvalue;
+    if(pathFrom.length >= cutoff) return;
+    numNeighbours = getNeighbours(origin, numSystems, space, map, neighbours, jumprange);
+
+    // debug
+    /*
+    for(i = 0; i < pathFrom.numNodes; i++){
+        printf(".");
+    }
+    printf("%d to %d n: %d s: %d ", origin, destination, numNeighbours, numSystems);
+    for(i = 0; i < numNeighbours; i++){
+        printf("%d ", neighbours[i]);
+    }
+    printf("\n");
+    */
+    // /debug
+
+    if(numNeighbours){
+        // TODO add btn cutoff
+        // Add this system to the path that lead us here.
+        pathFrom.nodes[pathFrom.numNodes] = origin;
+        // If this is not the first system on the path
+        if(pathFrom.numNodes){
+            pathFrom.length += map[origin][pathFrom.nodes[pathFrom.numNodes-1]];
+            pathFrom.starportmods += getBtnStarportMod(systems[origin].starport);
+        }
+        pathFrom.numNodes++;
+        currentvalue = pathFrom.starportmods + getBtnDistanceMod(pathFrom.length);
+        if(currentvalue <= paths->bestvalue){
+            return;   // Wild goose chase
+        }
+        for(i = 0; i < numNeighbours; i++){
+            if(neighbours[i] == destination){
+                pathFrom.nodes[pathFrom.numNodes] = destination;
+                pathFrom.length += map[origin][destination];
+                pathFrom.numNodes++;
+                memcpy(&paths->paths[paths->numpaths], &pathFrom, sizeof(path));
+                paths->numpaths++;
+                if(currentvalue > paths->bestvalue) paths->bestvalue = currentvalue;
+                return;
+            }
+        }
+        // Need to sort neighbours by starport. Do we? Lets not yet.
+        subspace = (int*)malloc(numSystems*sizeof(int));
+        for(i = 0; i < numSystems; i++){
+            subspace[i] = space[i];
+        }
+        for(i = 0; i < numNeighbours; i++) removeSystem(subspace, numSystems, neighbours[i]);
+        for(i = 0; i < numNeighbours; i++){
+            // This sort of depends on how pass-as-reference vrs pass-as-value works...
+            // I.e. does this create a copy of pathFrom?
+            getPathsFrom(neighbours[i], destination, numSystems-numNeighbours, subspace, systems, map, paths, pathFrom, jumprange, cutoff);
+        }
+        free(subspace);
+    }
+}
+
+int getBtnStarportMod(char starport){
+    if(starport == 'X') return -3;
+    if(starport == 'E') return -2;
+    if(starport == 'D') return -1;
+    return 0;
+}
+
+int getBtnDistanceMod(int d){
+    if(d < 2)  return 0;
+    if(d < 3)  return -1;
+    if(d < 6)  return -2;
+    if(d < 10) return -3;
+    if(d < 20) return -4;
+    if(d < 30) return -5;
+    if(d < 60) return -6;
+    if(d < 100) return -7;
+    if(d < 200) return -8;
+    if(d < 300) return -9;
+    if(d < 600) return -10;
+    if(d < 1000) return -11;
+    return -12;
+}
+
+int getNeighbours(int origin, int numSystems, int* space, int* map[], int* neighbours, int jumprange){
+    int i;
+    int numNeighbours = 0;
+    for(i = 0; i < numSystems; i++){
+        if(map[origin][space[i]] <= jumprange){
+            neighbours[numNeighbours] = space[i];
+            numNeighbours++;
+            if(numNeighbours >= MAX_NEIGHBOURS){
+                printf("Hit max neighbours");
+                return numNeighbours;
+            }
+        }
+    }
+    return numNeighbours;
 }
 
