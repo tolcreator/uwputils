@@ -10,6 +10,7 @@
 #define MAX_NEIGHBOURS 60
 // Change above if you change this.
 #define MAX_JUMP_RANGE 4
+#define BTN_CUTOFF 8
 
 enum tradeCodes {
     Ag, As, Ba, De, Fl, Ga, Hi, Ht, Ic, In, Lo, Lt, Na, Ni, Po, Ri, Wa, Va
@@ -38,6 +39,7 @@ typedef struct Path {
 } path;
 
 typedef struct PathSet {
+    int ubtn;
     int numpaths;
     int bestvalue;
     path paths[MAX_PATHS];
@@ -362,6 +364,7 @@ void getTradeRoute(int origin, int destination, int numSystems, starSystem* syst
     start.starportmods = 0;
     paths.numpaths = 0;
     paths.bestvalue = -1000;
+    paths.ubtn = ubtn;
     getPathsFrom(origin, destination, numSystems, space, systems, map, &paths, start, jumprange, cutoff);
     bestvalue = 0;
     best = 0;
@@ -426,7 +429,6 @@ void getPathsFrom(int origin, int destination, int numSystems, int* space, starS
     // /debug
 
     if(numNeighbours){
-        // TODO add btn cutoff
         // Add this system to the path that lead us here.
         pathFrom.nodes[pathFrom.numNodes] = origin;
         // If this is not the first system on the path
@@ -436,9 +438,8 @@ void getPathsFrom(int origin, int destination, int numSystems, int* space, starS
         }
         pathFrom.numNodes++;
         currentvalue = pathFrom.starportmods + getBtnDistanceMod(pathFrom.length);
-        if(currentvalue <= paths->bestvalue){
-            return;   // Wild goose chase
-        }
+        if((paths->ubtn + currentvalue) <= BTN_CUTOFF) return;
+        if(currentvalue <= paths->bestvalue) return;
         for(i = 0; i < numNeighbours; i++){
             if(neighbours[i] == destination){
                 pathFrom.nodes[pathFrom.numNodes] = destination;
