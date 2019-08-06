@@ -118,3 +118,76 @@ def getTradeRoute(source, dest, systems, map, jumprange=2):
 
     return {'btn': btn, 'path': path}
 
+
+def readFromFile(filename):
+    routes = []
+    with open(filename, 'r') as file:
+        for line in file:
+            parsed = parseLine(line)
+            if parsed:
+                routes.append(parsed)
+    return routes
+
+
+def parseLine(line):
+    route = {}
+    items = line.split()
+    route['btn'] = items[1]
+    route['nodes'] = items[4:]
+    return route
+
+
+def getColourForBtn(btn):
+    return {
+        0: '#000000',
+        1: '#080000',
+        2: '#0c0000',
+        3: '#100000',
+        4: '#140000',
+        5: '#180000',
+        6: '#1c0000',
+        7: '#200000',
+        8: '#280000',
+        9: '#300000',
+        10: '#400000',
+        11: '#600000',
+        12: '#800000',
+        13: '#c00000',
+        14: '#ff0000',
+        15: '#ff8000',
+        16: '#d0d000',
+        17: '#80a020',
+        18: '#00a0a0',
+        19: '#0000ff',
+        20: '#a000a0',
+    }.get(btn, '#ffffff')
+
+
+def getSizeForBtn(btn):
+    btns = {
+        0: 1,
+        1: 1,
+        2: 1,
+        3: 1,
+        4: 1,
+        5: 1,
+        6: 2,
+        7: 3,
+        8: 3,
+        9: 4,
+        10: 4,
+        11: 6,
+        12: 8,
+        13: 10,
+        14: 12,
+        15: 18,
+        16: 24,
+        17: 32,
+        18: 40,
+        19: 60,
+        20: 80,
+    }
+    if btn not in btns:
+        print btn
+    return btns.get(btn, 1)
+

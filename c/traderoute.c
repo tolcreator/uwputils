@@ -10,7 +10,7 @@
 #define MAX_NEIGHBOURS 60
 // Change above if you change this.
 #define MAX_JUMP_RANGE 4
-#define BTN_CUTOFF 8
+#define BTN_CUTOFF 10
 
 enum tradeCodes {
     Ag, As, Ba, De, Fl, Ga, Hi, Ht, Ic, In, Lo, Lt, Na, Ni, Po, Ri, Wa, Va
@@ -281,12 +281,14 @@ void constructDistanceMap(int n, starSystem* systems, int* map[]){
 int getDistance(int x1, int y1, int x2, int y2){
     int dx;
     int dy;
+    // x1 -= 1; x2 -= 1; y1 -= 1; y2 -= 1;
     y1 *= 2;
     y2 *= 2;
-    if(x1 % 2) y1++;
-    if(x2 % 2) y2++;
+    if(!(x1 % 2)) y1++;
+    if(!(x2 % 2)) y2++;
     dy = abs(y2 - y1);
     dx = abs(x2 - x1);
+    if(dx > dy) return dx;
     return (dx + dy) / 2;
 }
 

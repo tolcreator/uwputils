@@ -90,8 +90,12 @@ def systemToString(system):
 
 
 def getCoords(system):
-    x = system['hex'][:2]
-    y = system['hex'][2:]
+   return getCoordsFromHex(system['hex'])
+
+
+def getCoordsFromHex(hexString):
+    x = hexString[:2]
+    y = hexString[2:]
     return (int(x), int(y))
 
 

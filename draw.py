@@ -3,6 +3,7 @@ import hexutils
 import uwp
 import sector
 import trade
+import traderoute
 import political
 from PIL import ImageFont
 import math
@@ -287,4 +288,28 @@ def drawWorldTradeNumber(input, output, hexSize=256, scheme=DRAFT_SCHEME):
         origin = hexutils.getPosition(x-1, y-1, hexSize)
         drawSystemEconomics(draw, origin, entry['wtn'], hexSize, politicalPalette[entry['system']['allegiance']])
     img.save(output)
+
+
+def drawTradeRoutes(input, output, hexSize=256, scheme=DRAFT_SCHEME):
+    routes = traderoute.readFromFile(input)
+
+    draw, img = hexgrid.getSectorCanvas(hexSize)
+    routes.sort(key = lambda i: i['btn'])
+    for route in routes:
+        drawTradeRoute(draw, route, hexSize, scheme)
+    img.save(output)
+
+
+def drawTradeRoute(draw, route, hexSize, scheme):
+    colour = traderoute.getColourForBtn(int(route['btn']))
+    size = traderoute.getSizeForBtn(int(route['btn']))
+
+    for i in range(0, len(route['nodes'])-1):
+        source = sector.getCoordsFromHex(route['nodes'][i])
+        dest = sector.getCoordsFromHex(route['nodes'][i+1])
+        s = hexutils.getCenter(hexutils.getPosition(source[0]-1, source[1]-1, hexSize), hexSize)
+        d = hexutils.getCenter(hexutils.getPosition(dest[0]-1, dest[1]-1, hexSize), hexSize)
+        draw.line([s, d], fill=colour, width=size)
+
+
 
