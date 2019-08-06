@@ -311,5 +311,18 @@ def drawTradeRoute(draw, route, hexSize, scheme):
         d = hexutils.getCenter(hexutils.getPosition(dest[0]-1, dest[1]-1, hexSize), hexSize)
         draw.line([s, d], fill=colour, width=size)
 
+def drawTraffic(input, output, hexSize=256, scheme=DRAFT_SCHEME):
+    routes = traderoute.readFromFile(input)
+    traffic = traderoute.getTrafficFromRoutes(routes)
+    draw, img = hexgrid.getSectorCanvas(hexSize)
+    for node,btn in traffic.items():
+        colour = traderoute.getColourForBtn(int(btn))
+        size = traderoute.getSizeForBtn(int(btn))
+        s = hexutils.getCenter(hexutils.getPosition(node[0][0]-1, node[0][1]-1, hexSize), hexSize)
+        d = hexutils.getCenter(hexutils.getPosition(node[1][0]-1, node[1][1]-1, hexSize), hexSize)
+        draw.line([s, d], fill=colour, width=size)
+    img.save(output)
+
+
 
 

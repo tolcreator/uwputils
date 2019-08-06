@@ -5,7 +5,8 @@ import draw
 import hexutils
 
 def main(input, output):
-    draw.drawTradeRoutes(input, output, 128)
+    #draw.drawTradeRoutes(input, output, 128)
+    draw.drawTraffic(input, output, 128)
 
 if __name__ == "__main__":
     input = sys.argv[1]

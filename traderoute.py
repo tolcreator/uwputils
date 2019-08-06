@@ -1,6 +1,7 @@
 import hexutils
 import trade
 import uwp
+import sector
 
 BTN_CUTOFF = 8
 JUMP_CUTOFF = 20
@@ -191,3 +192,19 @@ def getSizeForBtn(btn):
         print btn
     return btns.get(btn, 1)
 
+
+def getTrafficFromRoutes(routes):
+    traffic = {}
+    for route in routes:
+        for i in range(0, len(route['nodes']) - 1):
+            source = sector.getCoordsFromHex(route['nodes'][i])
+            dest = sector.getCoordsFromHex(route['nodes'][i + 1])
+            if (dest, source) in traffic:
+                node = (dest, source)
+            else:
+                node = (source, dest)
+            if node in traffic:
+                traffic[node] = trade.btnAdder(traffic[node], float(route['btn']))
+            else:
+                traffic[node] = float(route['btn'])
+    return traffic
