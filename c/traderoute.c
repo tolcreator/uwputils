@@ -348,6 +348,7 @@ void getTradeRoute(int origin, int destination, int numSystems, starSystem* syst
     int best;
     int value;
     int s;
+	int bestfound;
 
     ubtn = systems[origin].wtn +
         systems[destination].wtn +
@@ -374,16 +375,18 @@ void getTradeRoute(int origin, int destination, int numSystems, starSystem* syst
     getPathsFrom(origin, destination, numSystems, space, systems, map, &paths, start, jumprange, cutoff);
     bestvalue = 0;
     best = 0;
+	bestfound = 0;
 
 	if(gdebug) printf("%d paths found\n", paths.numpaths);
     for(i = 0; i < paths.numpaths; i++){
         value = ubtn + paths.paths[i].starportmods + getBtnDistanceMod(paths.paths[i].length);
 		if(gdebug) printf("path %d value %d, bestvalue %d\n", i, value, bestvalue);
         if(value > bestvalue){
-            best = 1;
+            best = i;
+			bestfound = 1;
         }
     }
-    if(best){
+    if(bestfound){
         printf("%02d%02d->%02d%02d %02d %02d: ",
             systems[origin].x,
             systems[origin].y,
