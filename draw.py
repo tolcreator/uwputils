@@ -37,7 +37,6 @@ DRAFT_SCHEME = {
     'demographics': {'fill': '#000000', 'outline': '#ffffff'}
 }
 
-
 def drawSystem(draw, origin, system, hexSize, scheme):
     s = uwp.strToUwp(system['uwpString'])
     drawDot(draw, origin, s, hexSize, scheme)
@@ -239,6 +238,7 @@ def drawSystemEconomics(draw, origin, wtn, hexSize, colour):
     radius = int(hexSize * circleTable[wtn])
     box = [(coords[0] - radius, coords[1] - radius), (coords[0] + radius, coords[1] + radius)]
     draw.ellipse(box, fill=colour, outline="#ffffff", width=int(radius / 10))
+
 
 def drawSector(input, output, hexSize=256, scheme=DRAFT_SCHEME):
     systems = sector.readSystemsFromFile(input)

@@ -4,13 +4,15 @@
 
 #define MAX_LINE_LENGTH 80
 #define MAX_PATH_STRING_LENGTH 280
-#define MAX_PATH_LENGTH 20
+#define MAX_PATH_LENGTH 45
 #define MAX_PATHS 4096
 // Jump range of 4 with every system populated
 #define MAX_NEIGHBOURS 60
 // Change above if you change this.
 #define MAX_JUMP_RANGE 4
 #define BTN_CUTOFF 10
+
+int gdebug = 0;
 
 enum tradeCodes {
     Ag, As, Ba, De, Fl, Ga, Hi, Ht, Ic, In, Lo, Lt, Na, Ni, Po, Ri, Wa, Va
@@ -102,14 +104,16 @@ int main(int argc, char * argv[]){
     numSystems = parseFile(lines, buffer, systems);
     constructDistanceMap(numSystems, systems, map);
 
-    /*
+	/*
     for(i = 0; i < numSystems; i++){
+		printf("%03d ", i);
         printSystem(systems[i]);
-    }*/
+    }
+	*/
 
     for(origin = 0; origin < numSystems; origin++){
         for(destination = origin+1; destination  < numSystems; destination++){
-            getTradeRoute(origin, destination, numSystems, systems, map, jumprange, cutoff);
+			getTradeRoute(origin, destination, numSystems, systems, map, jumprange, cutoff);
         }
     }
 
@@ -239,9 +243,9 @@ int hexToInt(char hex){
     if((hex >= '0') && (hex <= '9'))
         return hex - '0';
     if((hex >= 'a') && (hex <= 'z'))
-        return hex - 'a';
+        return 10 + hex - 'a';
     if((hex >= 'A') && (hex <= 'Z'))
-        return hex - 'A';
+        return 10 + hex - 'A';
     return 0;
 }
 
@@ -371,10 +375,12 @@ void getTradeRoute(int origin, int destination, int numSystems, starSystem* syst
     bestvalue = 0;
     best = 0;
 
+	if(gdebug) printf("%d paths found\n", paths.numpaths);
     for(i = 0; i < paths.numpaths; i++){
         value = ubtn + paths.paths[i].starportmods + getBtnDistanceMod(paths.paths[i].length);
+		if(gdebug) printf("path %d value %d, bestvalue %d\n", i, value, bestvalue);
         if(value > bestvalue){
-            best = i;
+            best = 1;
         }
     }
     if(best){
@@ -391,7 +397,9 @@ void getTradeRoute(int origin, int destination, int numSystems, starSystem* syst
             printf("%02d%02d ", systems[s].x, systems[s].y);
         }
         printf("\n");
-    }
+    } else if (gdebug){
+		printf("No best path found for %d to %d\n", origin, destination);
+	}
 }
 
 int removeSystem(int space[], int numSystems, int origin){
@@ -414,21 +422,22 @@ void getPathsFrom(int origin, int destination, int numSystems, int* space, starS
     int i;
     int* subspace;
     int currentvalue;
-    if(pathFrom.length >= cutoff) return;
+    if(pathFrom.length >= cutoff){
+		if(gdebug) printf("length cutoff\n");
+		return;
+	}
     numNeighbours = getNeighbours(origin, numSystems, space, map, neighbours, jumprange);
 
-    // debug
-    /*
-    for(i = 0; i < pathFrom.numNodes; i++){
-        printf(".");
-    }
-    printf("%d to %d n: %d s: %d ", origin, destination, numNeighbours, numSystems);
-    for(i = 0; i < numNeighbours; i++){
-        printf("%d ", neighbours[i]);
-    }
-    printf("\n");
-    */
-    // /debug
+	if(gdebug){
+		for(i = 0; i < pathFrom.numNodes; i++){
+			printf(".");
+		}
+		printf("%d to %d n: %d s: %d ", origin, destination, numNeighbours, numSystems);
+		for(i = 0; i < numNeighbours; i++){
+			printf("%d ", neighbours[i]);
+		}
+		printf("\n");
+	}
 
     if(numNeighbours){
         // Add this system to the path that lead us here.
@@ -440,8 +449,14 @@ void getPathsFrom(int origin, int destination, int numSystems, int* space, starS
         }
         pathFrom.numNodes++;
         currentvalue = pathFrom.starportmods + getBtnDistanceMod(pathFrom.length);
-        if((paths->ubtn + currentvalue) <= BTN_CUTOFF) return;
-        if(currentvalue <= paths->bestvalue) return;
+        if((paths->ubtn + currentvalue) <= BTN_CUTOFF){
+			if(gdebug) printf("btn cutoff\n");
+			return;
+		}
+        if(currentvalue <= paths->bestvalue){
+			if(gdebug) printf("Goose chase %d %d\n", currentvalue, paths->bestvalue);
+			return;
+		}
         for(i = 0; i < numNeighbours; i++){
             if(neighbours[i] == destination){
                 pathFrom.nodes[pathFrom.numNodes] = destination;
@@ -450,6 +465,7 @@ void getPathsFrom(int origin, int destination, int numSystems, int* space, starS
                 memcpy(&paths->paths[paths->numpaths], &pathFrom, sizeof(path));
                 paths->numpaths++;
                 if(currentvalue > paths->bestvalue) paths->bestvalue = currentvalue;
+				if(gdebug) printf("found it\n");
                 return;
             }
         }
